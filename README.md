@@ -1,4 +1,6 @@
-# konj (kana, conv, japanese)
+# konj
+_n. portmanteau of kana, conv(ert) and japanese_
+
 Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 # current status
