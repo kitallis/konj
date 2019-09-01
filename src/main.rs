@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate lazy_static;
+extern crate ansi_term;
 
 use std::io::stdin;
 use std::string::String;
 use std::collections::{HashMap, BTreeMap};
+use ansi_term::Colour::Green;
 
 //
 // hiragana + katakana char list
@@ -444,7 +446,7 @@ lazy_static! {
 
 
 fn main() {
-    println!("== Konj: convert from one japanese script to all ==");
+    println!("{}", Green.paint("🍱  Konj: convert from one japanese script to all 🍱\n"));
 
     let mut input = String::new();
     stdin().read_line(&mut input).expect("Could not read input");
@@ -457,6 +459,8 @@ fn main() {
     } else {
         println!("Did not understand input character set.")
     }
+
+    println!("{}", "🍙")
 }
 
 fn to_kana(s: &str, katakana: bool) {
@@ -531,9 +535,6 @@ fn romaji_to_kana() -> BTreeMap<usize, HashMap<&'static str, &'static str>> {
 }
 
 fn group_by_length<'a>(map: &mut BTreeMap<usize, HashMap<&'a str, &'a str>>, romaji: &'a str, kana: &'a str) {
-    map
-        .entry(romaji.chars().count())
-        .or_insert_with(HashMap::new)
-        .insert(romaji, kana);
+    map.entry(romaji.chars().count()).or_insert_with(HashMap::new).insert(romaji, kana);
 }
 

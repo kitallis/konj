@@ -1,4 +1,4 @@
-# konj
+# konj (kana, conv, japanese)
 Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 # current status
@@ -16,11 +16,15 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 # use
 
 ```
-± cargo run
+± cargo build
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
-     Running `target/debug/konj`
-== Konj: convert from one japanese script to all ==
+    
+± ./target/debug/konj
+🍱  Konj: convert from one japanese script to all 🍱
+
 kippu
 You entered in romaji. Converting to kana...
-きっぷ
+hiragana: きっぷ
+katakana: キップ
+🍙
 ```
