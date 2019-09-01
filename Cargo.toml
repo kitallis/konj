@@ -1,0 +1,6 @@
+[package]
+name = "konj"
+version = "0.1.0"
+authors = ["Akshay Gupta <kitallis@gmail.com>"]
+
+[dependencies]
