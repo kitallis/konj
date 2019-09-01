@@ -3,14 +3,13 @@ Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 # current status
 
-Basic conversion from `romaji` to `hiragana`
+Basic conversion from `romaji` to `hiragana`, `katakana`
 
 # upcoming
 
 - Conversion from any input to all other inputs
     * hiragana → romaji, katakana
     * katakana → romaji, hiragana
-    * romaji → hiragana, katakana
 - Conversion from Kana to Kanji 
     * this would most likely be something like [henkan](https://en.wikipedia.org/wiki/Language_input_keys#Conversion) in IMEs
 

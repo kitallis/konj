@@ -3,8 +3,7 @@ extern crate lazy_static;
 
 use std::io::stdin;
 use std::string::String;
-use std::collections::HashMap;
-use std::collections::BTreeMap;
+use std::collections::{HashMap, BTreeMap};
 
 //
 // hiragana + katakana char list
@@ -454,14 +453,21 @@ fn main() {
         println!("You entered in kana. Cannot do anything.");
     } else if is_fully_romaji(&input.trim()) {
         println!("You entered in romaji. Converting to kana...");
-        println!("{}", to_kana(&input.trim(), false));
+        to_kana(&input.trim(), true)
     } else {
         println!("Did not understand input character set.")
     }
 }
 
-fn to_kana(s: &str, _katakana: bool) -> String {
-    replace_by_size(&to_double_consonants(&s))
+fn to_kana(s: &str, katakana: bool) {
+    let hiragana_output = replace_by_size(&to_double_consonants(&s));
+    let mut katakana_output = String::new();
+
+    if katakana {
+        katakana_output = to_katakana(&hiragana_output);
+    }
+
+    println!("hiragana: {}\nkatakana: {}", hiragana_output, katakana_output);
 }
 
 fn is_fully_kana(s: &str) -> bool {
@@ -490,9 +496,20 @@ fn to_double_consonants(s: &str) -> String {
     result
 }
 
+fn to_katakana(s: &str) -> String {
+    let mut result = String::from(s);
+
+    for (k, v) in HIRAGANA_TO_KATAKANA.iter() {
+        result = result.replace(k, v);
+    }
+
+    result
+}
+
 fn replace_by_size(s: &str) -> String {
     let mut result = String::from(s);
 
+    // reversing the BTreeMap iterator to effectively start from the largest romaji key
     for (_k, v) in romaji_to_kana().iter().rev() {
         for (romaji, kana) in v {
             result = result.replace(romaji, kana);
@@ -512,7 +529,6 @@ fn romaji_to_kana() -> BTreeMap<usize, HashMap<&'static str, &'static str>> {
 
     map
 }
-
 
 fn group_by_length<'a>(map: &mut BTreeMap<usize, HashMap<&'a str, &'a str>>, romaji: &'a str, kana: &'a str) {
     map
