@@ -15,8 +15,8 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 * output json (flag)
 * make the program unix-pipe-able only
 * code cleanup:
-  * refactor generic transformation fns
-  * move out the static maps into another namepsace
+  * ~~refactor generic transformation fns~~
+  * ~~move out the static maps into another namepsace~~
   * lazy load the maps once during the program lifetime
 
 # upcoming
