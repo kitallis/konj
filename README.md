@@ -7,8 +7,20 @@ Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 Basic conversion from `romaji` to `hiragana`, `katakana`
 
+# next steps
+
+* handle capital letters in romaji input
+* handle whitespace in romaji input
+* output json (flag)
+* make the program unix-pipe-able only
+* code cleanup:
+  * refactor generic transformation fns
+  * move out the static maps into another namepsace
+  * lazy load the maps once during the program lifetime
+
 # upcoming
 
+- Handle mixed-input (hiragana + romaji etc.)
 - Conversion from any input to all other inputs
     * hiragana → romaji, katakana
     * katakana → romaji, hiragana
