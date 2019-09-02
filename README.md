@@ -34,10 +34,9 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 ± cargo build
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
     
-± ./target/debug/konj
+± echo "kippu" | ./target/debug/konj
 🍱  Konj: convert from one japanese script to all 🍱
 
-kippu
 You entered in romaji. Converting to kana...
 hiragana: きっぷ
 katakana: キップ

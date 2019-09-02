@@ -2,18 +2,14 @@ extern crate ansi_term;
 #[macro_use]
 extern crate lazy_static;
 
-pub mod hiragana_to_katakana;
-pub mod romaji_to_kana;
-pub mod double_consonants;
+pub mod maps;
 
 use std::io::stdin;
 use std::string::String;
 use std::collections::{HashMap, BTreeMap};
 use ansi_term::Colour::Green;
 
-use hiragana_to_katakana::HIRAGANA_TO_KATAKANA;
-use romaji_to_kana::ROMAJI_TO_KANA;
-use double_consonants::DOUBLE_CONSONANTS_TO_KANA;
+use maps::{HIRAGANA_TO_KATAKANA, ROMAJI_TO_KANA, DOUBLE_CONSONANTS_TO_KANA};
 
 //
 // hiragana + katakana char list
