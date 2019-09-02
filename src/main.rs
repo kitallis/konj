@@ -3,6 +3,7 @@ extern crate ansi_term;
 extern crate lazy_static;
 
 pub mod maps;
+pub mod strings;
 
 use std::io::stdin;
 use std::string::String;
@@ -41,40 +42,34 @@ fn to_kana(s: &str, enable_katakana: bool) {
     let hiragana_output = romaji_to_kana(&to_double_consonants(&s));
     let mut katakana_output = String::new();
 
-    if enable_katakana { katakana_output = to_katakana(&hiragana_output); }
+    if enable_katakana {
+        katakana_output = to_katakana(&hiragana_output);
+    }
 
     println!("hiragana: {}\nkatakana: {}", hiragana_output, katakana_output);
 }
 
 fn is_fully_kana(s: &str) -> bool {
-    is_str_between_char_range(s, KANA_BEG, KANA_END)
+    strings::is_str_between_char_range(s,
+                                       KANA_BEG,
+                                       KANA_END)
 }
+
 
 fn is_fully_romaji(s: &str) -> bool {
-    is_str_between_char_range(s, FULL_WIDTH_ROMAN_BEG, FULL_WIDTH_ROMAN_END)
-}
-
-fn is_str_between_char_range(s: &str, range_beg: char, range_end: char) -> bool {
-    for ch in s.trim().chars() {
-        if !(ch >= range_beg && ch <= range_end) { return false; }
-    }
-
-    true
-}
-
-fn to_double_consonants(s: &str) -> String {
-    repeatedly_replace_str_with_map(&s, &DOUBLE_CONSONANTS_TO_KANA)
+    strings::is_str_between_char_range(s,
+                                       FULL_WIDTH_ROMAN_BEG,
+                                       FULL_WIDTH_ROMAN_END)
 }
 
 fn to_katakana(s: &str) -> String {
-    repeatedly_replace_str_with_map(&s, &HIRAGANA_TO_KATAKANA)
+    strings::repeatedly_replace_str_with_map(&s,
+                                             &HIRAGANA_TO_KATAKANA)
 }
 
-fn repeatedly_replace_str_with_map(s: &str, map: &HashMap<&str, &str>) -> String {
-    map.iter().fold(String::from(s), |mut acc, (k, v)| {
-        acc = acc.replace(k, v);
-        acc
-    })
+fn to_double_consonants(s: &str) -> String {
+    strings::repeatedly_replace_str_with_map(&s,
+                                             &DOUBLE_CONSONANTS_TO_KANA)
 }
 
 fn romaji_to_kana(s: &str) -> String {
