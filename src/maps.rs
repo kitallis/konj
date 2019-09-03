@@ -422,6 +422,12 @@ lazy_static! {
         map.insert("wo", "を");
         map.insert("lwa", "ゎ");
         map.insert("xwa", "ゎ");
+        map.insert("[", "「");
+        map.insert("]", "」");
+        map.insert("*", "＊");
+        map.insert("?", "？");
+        map.insert(".", "。");
+        map.insert(",", "、");
 
         map
     };

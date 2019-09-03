@@ -10,8 +10,8 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 # next steps
 
 * ~~handle capital letters in romaji input~~
-* handle whitespace in romaji input
-* handle punctuation: , and .
+* ~~handle whitespace in romaji input~~
+* ~~handle punctuation: , and .~~
 * output json (flag)
 * make the program unix-pipe-able only
 * code cleanup:
