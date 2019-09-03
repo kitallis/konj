@@ -10,7 +10,9 @@ use std::string::String;
 use std::collections::{HashMap, BTreeMap};
 use ansi_term::Colour::Green;
 
-use maps::{HIRAGANA_TO_KATAKANA, ROMAJI_TO_KANA, DOUBLE_CONSONANTS_TO_KANA};
+use maps::{HIRAGANA_TO_KATAKANA,
+           ROMAJI_TO_KANA,
+           DOUBLE_CONSONANTS_TO_KANA};
 
 // hiragana + katakana char list
 static KANA_BEG: char = '\u{3040}';
@@ -40,11 +42,11 @@ fn main() {
 }
 
 fn to_kana(s: &str, enable_katakana: bool) {
-    let hiragana_output = romaji_to_kana(&to_double_consonants(&s));
+    let hiragana_output = romaji_to_kana(&double_consonants_to_kana(&s));
     let mut katakana_output = String::new();
 
     if enable_katakana {
-        katakana_output = to_katakana(&hiragana_output);
+        katakana_output = hiragana_to_katakana(&hiragana_output);
     }
 
     println!("hiragana: {}\nkatakana: {}", hiragana_output, katakana_output);
@@ -63,27 +65,27 @@ fn is_fully_romaji(s: &str) -> bool {
                                        FULL_WIDTH_ROMAN_END)
 }
 
-fn to_katakana(s: &str) -> String {
-    strings::repeatedly_replace_str_with_map(&s,
-                                             &HIRAGANA_TO_KATAKANA)
-}
-
-fn to_double_consonants(s: &str) -> String {
-    strings::repeatedly_replace_str_with_map(&s,
+fn double_consonants_to_kana(romaji: &str) -> String {
+    strings::repeatedly_replace_str_with_map(&romaji,
                                              &DOUBLE_CONSONANTS_TO_KANA)
 }
 
-fn romaji_to_kana(s: &str) -> String {
+fn hiragana_to_katakana(hiragana: &str) -> String {
+    strings::repeatedly_replace_str_with_map(&hiragana,
+                                             &HIRAGANA_TO_KATAKANA)
+}
+
+fn romaji_to_kana(romaji: &str) -> String {
     // BTreeMap to allow for a sorted lookup by key length
     let mut romaji_to_kana_by_key_size: BTreeMap<usize, HashMap<&str, &str>> = BTreeMap::new();
-    let mut result = String::from(s);
+    let mut result = String::from(romaji);
 
     // Build the BTreeMap keyed by romaji key length
-    for (romaji, kana) in ROMAJI_TO_KANA.iter() {
+    for (romaji_key, kana) in ROMAJI_TO_KANA.iter() {
         romaji_to_kana_by_key_size
-            .entry(romaji.chars().count())
+            .entry(romaji_key.chars().count())
             .or_insert_with(HashMap::new)
-            .insert(romaji, kana);
+            .insert(romaji_key, kana);
     }
 
     // Reverse the BTreeMap iterator to effectively start from the largest romaji key

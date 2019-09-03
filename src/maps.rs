@@ -422,6 +422,8 @@ lazy_static! {
         map.insert("wo", "を");
         map.insert("lwa", "ゎ");
         map.insert("xwa", "ゎ");
+
+        // punctuation
         map.insert("[", "「");
         map.insert("]", "」");
         map.insert("*", "＊");
