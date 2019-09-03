@@ -25,12 +25,13 @@ fn main() {
 
     let mut input = String::new();
     stdin().read_line(&mut input).expect("Could not read input");
+    input = input.trim().to_lowercase();
 
-    if is_fully_kana(&input.trim()) {
+    if is_fully_kana(&input) {
         println!("You entered in kana. Cannot do anything.");
-    } else if is_fully_romaji(&input.trim()) {
+    } else if is_fully_romaji(&input) {
         println!("You entered in romaji. Converting to kana...");
-        to_kana(&input.trim(), true)
+        to_kana(&input, true)
     } else {
         println!("Did not understand input character set.")
     }
