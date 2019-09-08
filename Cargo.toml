@@ -4,5 +4,6 @@ version = "0.1.0"
 authors = ["Akshay Gupta <kitallis@gmail.com>"]
 
 [dependencies]
+indexmap = "1.1.0"
 lazy_static = "1.4.0"
 ansi_term = "0.12"
