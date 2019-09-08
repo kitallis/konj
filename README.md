@@ -17,13 +17,13 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 * code cleanup:
   * ~~refactor generic transformation fns~~
   * ~~move out the static maps into another namepsace~~
-  * lazy load the maps once during the program lifetime
+  * ~~eager load the maps once during the program lifetime~~
 
 # upcoming
 
 - Handle mixed-input (hiragana + romaji etc.)
 - Conversion from any input to all other inputs
-    * hiragana → romaji, katakana
+    * ~~hiragana → romaji, katakana~~
     * katakana → romaji, hiragana
 - Conversion from Kana to Kanji 
     * this would most likely be something like [henkan](https://en.wikipedia.org/wiki/Language_input_keys#Conversion) in IMEs
@@ -33,6 +33,10 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 ```
 ± cargo build
     Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+
+#
+# romaji to kana
+#
     
 ± echo "kippu" | ./target/debug/konj
 🍱  Konj: convert from one japanese script to all 🍱
@@ -40,5 +44,15 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 You entered in romaji. Converting to kana...
 hiragana: きっぷ
 katakana: キップ
-🍙
+
+#
+# hiragana to romaji
+#
+
+± echo "しんかんせん" | ./target/debug/konj
+🍱  Konj: convert from one japanese script to all 🍱
+
+hiragana: しんかんせん
+katakana: シンカンセン
+romaji: shinkansen
 ```

@@ -3,7 +3,6 @@ extern crate ansi_term;
 extern crate lazy_static;
 extern crate indexmap;
 
-pub mod maps;
 pub mod convert;
 pub mod strings;
 
@@ -16,7 +15,8 @@ use ansi_term::Colour::Green;
 use convert::{ConversionData,
               HIRAGANA_TO_KATAKANA,
               ROMAJI_TO_KANA,
-              DOUBLE_CONSONANTS_TO_KANA};
+              KANA_TO_ROMAJI,
+              GEMINATES_TO_KANA};
 
 // hiragana + katakana char list
 static KANA_BEG: char = '\u{3040}';
@@ -30,12 +30,12 @@ fn main() {
     println!("{}", Green.paint("🍱  Konj: convert from one japanese script to all 🍱\n"));
 
     // Eager-load all the conversion data
-    let conversion_data =
-        ConversionData {
-            romaji_to_hiragana: &ROMAJI_TO_KANA,
-            double_consonants_to_kana: &DOUBLE_CONSONANTS_TO_KANA,
-            hiragana_to_katakana: &HIRAGANA_TO_KATAKANA,
-        };
+    let conversion_data = ConversionData {
+        romaji_to_hiragana: &ROMAJI_TO_KANA,
+        hiragana_to_romaji: &KANA_TO_ROMAJI,
+        geminates_to_kana: &GEMINATES_TO_KANA,
+        hiragana_to_katakana: &HIRAGANA_TO_KATAKANA,
+    };
 
     // Accept user input from STDIN
     let mut input = String::new();
@@ -48,43 +48,37 @@ fn main() {
             kana_to_romaji(&input, conversion_data),
 
         (false, true) =>
-            romaji_to_kana(&input, conversion_data, true),
+            romaji_to_kana(&input, conversion_data),
 
         (_, _) =>
             println!("Did not understand input character set.")
     }
 }
 
-fn romaji_to_kana(s: &str, conversion: ConversionData, enable_katakana: bool) {
+fn romaji_to_kana(romaji: &str, conversion_data: ConversionData) {
+    let geminates =
+        strings::repeatedly_replace_str_with_map(&romaji,
+                                                 &conversion_data.geminates_to_kana);
+
     let hiragana_output =
-        transform_input(&double_consonants_to_kana(&s),
-                        &conversion.romaji_to_hiragana);
-    let mut katakana_output = String::new();
+        transform_input(&geminates,
+                        &conversion_data.romaji_to_hiragana);
 
+    let katakana_output =
+        strings::repeatedly_replace_str_with_map(&hiragana_output,
+                                                 &conversion_data.hiragana_to_katakana);
 
-    if enable_katakana {
-        katakana_output = hiragana_to_katakana(&hiragana_output);
-    }
-
-    println!("hiragana: {}\nkatakana: {}", hiragana_output, katakana_output);
+    println!("romaji: {}\nhiragana: {}\nkatakana: {}", romaji, hiragana_output, katakana_output);
 }
 
-fn kana_to_romaji(kana: &str, conversion: ConversionData) {
-    let output =
-        transform_input(kana,
-                        &maps::invert(conversion.romaji_to_hiragana));
+fn kana_to_romaji(kana: &str, conversion_data: ConversionData) {
+    let katakana_output =
+        strings::repeatedly_replace_str_with_map(&kana,
+                                                 &conversion_data.hiragana_to_katakana);
+    let romaji_output =
+        transform_input(kana, &conversion_data.hiragana_to_romaji);
 
-    println!("romaji: {}", output);
-}
-
-fn double_consonants_to_kana(romaji: &str) -> String {
-    strings::repeatedly_replace_str_with_map(&romaji,
-                                             &DOUBLE_CONSONANTS_TO_KANA)
-}
-
-fn hiragana_to_katakana(hiragana: &str) -> String {
-    strings::repeatedly_replace_str_with_map(&hiragana,
-                                             &HIRAGANA_TO_KATAKANA)
+    println!("hiragana: {}\nkatakana: {}\nromaji: {}", kana, katakana_output, romaji_output);
 }
 
 fn transform_input(input: &str, map: &IndexMap<&str, &str>) -> String {
@@ -123,6 +117,11 @@ fn is_fully_romaji(s: &str) -> bool {
                                        FULL_WIDTH_ROMAN_END)
 }
 
+// test data:
+//
 // きっう
 // はは
 // しんかんせん
+// どきっ
+// shinkansen
+// kippu

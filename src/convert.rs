@@ -1,17 +1,18 @@
 use indexmap::IndexMap;
 
 #[derive(Debug)]
-pub struct ConversionData<'a, 'b> {
+pub struct ConversionData<'a> {
     pub romaji_to_hiragana: &'a IndexMap<&'static str, &'static str>,
-    pub double_consonants_to_kana: &'b IndexMap<&'static str, &'static str>,
-    pub hiragana_to_katakana: &'b IndexMap<&'static str, &'static str>,
+    pub hiragana_to_romaji: &'a IndexMap<&'static str, &'static str>,
+    pub geminates_to_kana: &'a IndexMap<&'static str, &'static str>,
+    pub hiragana_to_katakana: &'a IndexMap<&'static str, &'static str>,
 }
 
 //
 // In the form of: romaji → partial kana
 //
 lazy_static! {
-    pub static ref DOUBLE_CONSONANTS_TO_KANA: IndexMap<&'static str, &'static str> = {
+    pub static ref GEMINATES_TO_KANA: IndexMap<&'static str, &'static str> = {
         let mut map = IndexMap::new();
 
         map.insert("kk", "っk");
@@ -134,18 +135,35 @@ lazy_static! {
 }
 
 //
+// This does two things:
+//
+// 1. Inverts the insertion order of ROMAJI_TO_KANA
+// 2. Inverts from Map<K,V> to Map<V,K>
+//
+// This ensures that the "dominant" mapping is preferred
+//
+// For eg, "ka" over "ca" for "か"
+//
+lazy_static! {
+    pub static ref KANA_TO_ROMAJI: IndexMap<&'static str, &'static str> = {
+        let mut map: IndexMap<&str, &str> = IndexMap::new();
+
+        for (k, v) in ROMAJI_TO_KANA.iter().rev() {
+            map.insert(v, k);
+        }
+
+        map
+    };
+}
+
+//
 // Hepburn / Kunrei-shiki romanization mappings to kana
 //
 lazy_static! {
     pub static ref ROMAJI_TO_KANA: IndexMap<&'static str, &'static str> = {
         let mut map = IndexMap::new();
 
-        //
         // The insertion order here matters for kana → romaji,
-        //
-        // * The map is inverted
-        // * The "dominant" mapping is preferred
-        //
         map.insert("n", "ん");
         map.insert("nnn", "んn");
         map.insert("nn", "ん");
