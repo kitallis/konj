@@ -1,6 +1,6 @@
 # konj
 
-![crates.io](https://img.shields.io/crates/v/konj.svg)
+[![Crates.io](https://img.shields.io/crates/v/konj.svg)](https://crates.io/crates/konj)
 
 _n. portmanteau of kana, conv(ert) and japanese_
 
