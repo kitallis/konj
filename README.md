@@ -38,19 +38,17 @@ Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 #
 # romaji to kana
-#
-    
+#    
 ± echo "kippu" | ./target/debug/konj
 🍱  Konj: convert from one japanese script to all 🍱
 
-You entered in romaji. Converting to kana...
+romaji: kippu
 hiragana: きっぷ
 katakana: キップ
 
 #
 # hiragana to romaji
 #
-
 ± echo "しんかんせん" | ./target/debug/konj
 🍱  Konj: convert from one japanese script to all 🍱
 
