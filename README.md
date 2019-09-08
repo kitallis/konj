@@ -1,11 +1,15 @@
 # konj
+
+![crates.io](https://img.shields.io/crates/v/konj.svg)
+
 _n. portmanteau of kana, conv(ert) and japanese_
 
 Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 # current status
 
-Basic conversion from `romaji` to `hiragana`, `katakana`
+* `romaji` → `hiragana`, `katakana`
+* `hiragana` → `katakana`, `romaji` (incomplete support)
 
 # next steps
 
@@ -21,10 +25,8 @@ Basic conversion from `romaji` to `hiragana`, `katakana`
 
 # upcoming
 
+- Katakana → romaji, hiragana
 - Handle mixed-input (hiragana + romaji etc.)
-- Conversion from any input to all other inputs
-    * ~~hiragana → romaji, katakana~~
-    * katakana → romaji, hiragana
 - Conversion from Kana to Kanji 
     * this would most likely be something like [henkan](https://en.wikipedia.org/wiki/Language_input_keys#Conversion) in IMEs
 
