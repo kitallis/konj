@@ -6,7 +6,7 @@ license = "MIT"
 description = "A tool to convert between various Japanese scripts"
 homepage = "https://github.com/kitallis/konj"
 repository = "https://github.com/kitallis/konj"
-keywords = ["japanese" "cli"]
+keywords = ["japanese", "cli"]
 categories = ["command-line-utilities"]
 readme = "README.md"
 
