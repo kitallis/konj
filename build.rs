@@ -5,12 +5,37 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+// trait Generate {
+//     fn write() -> Option<usize>;
+// }
+
 #[derive(Clone)]
 struct ScriptTup<'a>(&'a str, &'a str);
 
 struct Geminates<'a> {
     favored: [ScriptTup<'a>; 9],
     rest: [ScriptTup<'a>; 3],
+}
+
+impl<'a> Geminates<'a> {
+    fn with_sokuon(self) -> Vec<ScriptTup<'a>> {
+        self.favored
+            .to_vec()
+            .iter()
+            .cloned()
+            .chain(self.rest.to_vec().iter().cloned())
+            .collect()
+    }
+
+    fn invert(self) -> Vec<ScriptTup<'a>> {
+        let mut inversion: Vec<ScriptTup> = Vec::new();
+
+        for ScriptTup(k, v) in self.favored.to_vec().iter() {
+            inversion.push(ScriptTup(v, k))
+        }
+
+        inversion
+    }
 }
 
 // In the form of: romaji → partial kana
@@ -35,21 +60,58 @@ const GEMINATES_AND_KANA: Geminates<'static> = Geminates {
 };
 
 struct KanaRomaji<'a> {
-    favored: [ScriptTup<'a>; 277],
-    rest: [ScriptTup<'a>; 9],
+    favored: [ScriptTup<'a>; 205],
+    rest: [ScriptTup<'a>; 70],
     with_sokuon: [ScriptTup<'a>; 3],
     punctuation: [ScriptTup<'a>; 6],
 }
 
-// impl KanaRomaji {
-//     fn to_romaji(self) {
-//      // concat the self.favored + GEMINATES_AND_KANA.favored + punctuation
-//     }
+//
+// This does three things:
+//
+// 1. Inverts the insertion order of ROMAJI_TO_KANA
+// 2. Inverts from Map<K,V> to Map<V,K>
+// 3. Removes all instances of っ from the inverted mapping
+//
+// No. 2 ensures that the "dominant" mapping is preferred
+// For eg, "ka" over "ca" for "か"
+//
+impl<'a> KanaRomaji<'a> {
+    // Ignore 'tsu'
+    fn to_romaji(self) -> Vec<ScriptTup<'a>> {
+        self.invert()
+            .to_vec()
+            .iter()
+            .cloned()
+            .chain(GEMINATES_AND_KANA.invert().iter().cloned())
+            .collect()
+    }
 
-//     fn to_kana(self) {
-//         // concat the self.favored + GEMINATES_AND_KANA.favored + punctuation
-//     }
-// }
+    fn invert(self) -> Vec<ScriptTup<'a>> {
+        let mut inversion: Vec<ScriptTup> = Vec::new();
+
+        for ScriptTup(k, v) in self.favored.to_vec().iter() {
+            inversion.push(ScriptTup(v, k))
+        }
+
+        for ScriptTup(k, v) in self.punctuation.to_vec().iter() {
+            inversion.push(ScriptTup(v, k))
+        }
+
+        inversion
+    }
+
+    fn to_kana(self) -> Vec<ScriptTup<'a>> {
+        self.favored
+            .to_vec()
+            .iter()
+            .cloned()
+            .chain(self.rest.to_vec().iter().cloned())
+            .chain(self.with_sokuon.to_vec().iter().cloned())
+            .chain(self.punctuation.to_vec().iter().cloned())
+            .collect()
+    }
+}
 
 const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
     favored: [
@@ -60,47 +122,20 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("u", "う"),
         ScriptTup("e", "え"),
         ScriptTup("o", "お"),
-        ScriptTup("yi", "い"),
         ScriptTup("la", "ぁ"),
         ScriptTup("li", "ぃ"),
         ScriptTup("lu", "ぅ"),
         ScriptTup("le", "ぇ"),
         ScriptTup("lo", "ぉ"),
-        ScriptTup("xa", "ぁ"),
-        ScriptTup("xi", "ぃ"),
-        ScriptTup("xu", "ぅ"),
-        ScriptTup("xe", "ぇ"),
-        ScriptTup("xo", "ぉ"),
-        ScriptTup("lyi", "ぃ"),
-        ScriptTup("xyi", "ぃ"),
-        ScriptTup("lye", "ぇ"),
-        ScriptTup("xye", "ぇ"),
         ScriptTup("ye", "いぇ"),
         ScriptTup("wi", "うぃ"),
         ScriptTup("we", "うぇ"),
         ScriptTup("wha", "うぁ"),
-        ScriptTup("whi", "うぃ"),
-        ScriptTup("whe", "うぇ"),
-        ScriptTup("who", "うぉ"),
-        ScriptTup("vu", "ヴ"),
-        ScriptTup("va", "ヴぁ"),
-        ScriptTup("vi", "ヴぃ"),
-        ScriptTup("vyi", "ヴぃ"),
-        ScriptTup("ve", "ヴぇ"),
-        ScriptTup("vye", "ヴぇ"),
-        ScriptTup("vo", "ヴぉ"),
-        ScriptTup("vya", "ヴゃ"),
-        ScriptTup("vyu", "ヴゅ"),
-        ScriptTup("vyo", "ヴょ"),
         ScriptTup("ka", "か"),
         ScriptTup("ki", "き"),
         ScriptTup("ku", "く"),
         ScriptTup("ke", "け"),
         ScriptTup("ko", "こ"),
-        ScriptTup("ca", "か"),
-        ScriptTup("cu", "く"),
-        ScriptTup("co", "こ"),
-        ScriptTup("qu", "く"),
         ScriptTup("kya", "きゃ"),
         ScriptTup("kyi", "きぃ"),
         ScriptTup("kyu", "きゅ"),
@@ -110,21 +145,11 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("qyu", "くゅ"),
         ScriptTup("qyo", "くょ"),
         ScriptTup("lka", "ヵ"),
-        ScriptTup("xka", "ヵ"),
-        ScriptTup("lke", "ヶ"),
-        ScriptTup("xke", "ヶ"),
         ScriptTup("qwa", "くぁ"),
         ScriptTup("qwi", "くぃ"),
         ScriptTup("qwu", "くぅ"),
         ScriptTup("qwe", "くぇ"),
         ScriptTup("qwo", "くぉ"),
-        ScriptTup("qa", "くぁ"),
-        ScriptTup("qi", "くぃ"),
-        ScriptTup("qe", "くぇ"),
-        ScriptTup("qo", "くぉ"),
-        ScriptTup("kwa", "くぁ"),
-        ScriptTup("qyi", "くぃ"),
-        ScriptTup("qye", "くぇ"),
         ScriptTup("ga", "が"),
         ScriptTup("gi", "ぎ"),
         ScriptTup("gu", "ぐ"),
@@ -142,21 +167,14 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("gwo", "ぐぉ"),
         ScriptTup("shi", "し"),
         ScriptTup("sa", "さ"),
-        ScriptTup("si", "し"),
         ScriptTup("su", "す"),
         ScriptTup("se", "せ"),
         ScriptTup("so", "そ"),
-        ScriptTup("ci", "し"),
-        ScriptTup("ce", "せ"),
         ScriptTup("sha", "しゃ"),
         ScriptTup("shu", "しゅ"),
         ScriptTup("she", "しぇ"),
         ScriptTup("sho", "しょ"),
-        ScriptTup("sya", "しゃ"),
         ScriptTup("syi", "しぃ"),
-        ScriptTup("syu", "しゅ"),
-        ScriptTup("sye", "しぇ"),
-        ScriptTup("syo", "しょ"),
         ScriptTup("swa", "すぁ"),
         ScriptTup("swi", "すぃ"),
         ScriptTup("swu", "すぅ"),
@@ -164,7 +182,6 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("swo", "すぉ"),
         ScriptTup("ji", "じ"),
         ScriptTup("za", "ざ"),
-        ScriptTup("zi", "じ"),
         ScriptTup("zu", "ず"),
         ScriptTup("ze", "ぜ"),
         ScriptTup("zo", "ぞ"),
@@ -172,37 +189,17 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("ju", "じゅ"),
         ScriptTup("je", "じぇ"),
         ScriptTup("jo", "じょ"),
-        ScriptTup("jya", "じゃ"),
         ScriptTup("jyi", "じぃ"),
-        ScriptTup("jyu", "じゅ"),
-        ScriptTup("jye", "じぇ"),
-        ScriptTup("jyo", "じょ"),
-        ScriptTup("zya", "じゃ"),
-        ScriptTup("zyi", "じぃ"),
-        ScriptTup("zyu", "じゅ"),
-        ScriptTup("zye", "じぇ"),
-        ScriptTup("zyo", "じょ"),
         ScriptTup("chi", "ち"),
         ScriptTup("tsu", "つ"),
         ScriptTup("ta", "た"),
-        ScriptTup("ti", "ち"),
-        ScriptTup("tu", "つ"),
         ScriptTup("te", "て"),
         ScriptTup("to", "と"),
         ScriptTup("cha", "ちゃ"),
         ScriptTup("chu", "ちゅ"),
         ScriptTup("che", "ちぇ"),
         ScriptTup("cho", "ちょ"),
-        ScriptTup("tya", "ちゃ"),
         ScriptTup("tyi", "ちぃ"),
-        ScriptTup("tyu", "ちゅ"),
-        ScriptTup("tye", "ちぇ"),
-        ScriptTup("tyo", "ちょ"),
-        ScriptTup("cya", "ちゃ"),
-        ScriptTup("cyi", "ちぃ"),
-        ScriptTup("cyu", "ちゅ"),
-        ScriptTup("cye", "ちぇ"),
-        ScriptTup("cyo", "ちょ"),
         ScriptTup("tsa", "つぁ"),
         ScriptTup("tsi", "つぃ"),
         ScriptTup("tse", "つぇ"),
@@ -220,8 +217,6 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("dzu", "づ"),
         ScriptTup("dzi", "ぢ"),
         ScriptTup("da", "だ"),
-        ScriptTup("di", "ぢ"),
-        ScriptTup("du", "づ"),
         ScriptTup("de", "で"),
         ScriptTup("do", "ど"),
         ScriptTup("dya", "ぢゃ"),
@@ -252,7 +247,6 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("fu", "ふ"),
         ScriptTup("ha", "は"),
         ScriptTup("hi", "ひ"),
-        ScriptTup("hu", "ふ"),
         ScriptTup("he", "へ"),
         ScriptTup("ho", "ほ"),
         ScriptTup("hya", "ひゃ"),
@@ -266,8 +260,6 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("fye", "ふぇ"),
         ScriptTup("fyo", "ふょ"),
         ScriptTup("fa", "ふぁ"),
-        ScriptTup("fi", "ふぃ"),
-        ScriptTup("fe", "ふぇ"),
         ScriptTup("fo", "ふぉ"),
         ScriptTup("ba", "ば"),
         ScriptTup("bi", "び"),
@@ -280,14 +272,12 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
         ScriptTup("bye", "びぇ"),
         ScriptTup("byo", "びょ"),
         ScriptTup("va", "ヴぁ"),
-        ScriptTup("vi", "ヴぃ"),
         ScriptTup("vu", "ヴ"),
-        ScriptTup("ve", "ヴぇ"),
         ScriptTup("vo", "ヴぉ"),
         ScriptTup("vya", "ヴゃ"),
-        ScriptTup("vyi", "ヴぃ"),
+        ScriptTup("vi", "ヴぃ"),
         ScriptTup("vyu", "ヴゅ"),
-        ScriptTup("vye", "ヴぇ"),
+        ScriptTup("ve", "ヴぇ"),
         ScriptTup("vyo", "ヴょ"),
         ScriptTup("pa", "ぱ"),
         ScriptTup("pi", "ぴ"),
@@ -333,10 +323,71 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
     ],
 
     rest: [
+        ScriptTup("vye", "ヴぇ"),
+        ScriptTup("vyi", "ヴぃ"),
+        ScriptTup("fi", "ふぃ"),
+        ScriptTup("fe", "ふぇ"),
+        ScriptTup("hu", "ふ"),
+        ScriptTup("di", "ぢ"),
+        ScriptTup("du", "づ"),
+        ScriptTup("cye", "ちぇ"),
+        ScriptTup("cyo", "ちょ"),
+        ScriptTup("tyu", "ちゅ"),
+        ScriptTup("cyu", "ちゅ"),
+        ScriptTup("tye", "ちぇ"),
+        ScriptTup("tyo", "ちょ"),
+        ScriptTup("cyi", "ちぃ"),
+        ScriptTup("tya", "ちゃ"),
+        ScriptTup("cya", "ちゃ"),
+        ScriptTup("ti", "ち"),
+        ScriptTup("tu", "つ"),
+        ScriptTup("zi", "じ"),
+        ScriptTup("sya", "しゃ"),
+        ScriptTup("syu", "しゅ"),
+        ScriptTup("sye", "しぇ"),
+        ScriptTup("syo", "しょ"),
+        ScriptTup("jya", "じゃ"),
+        ScriptTup("jyu", "じゅ"),
+        ScriptTup("jye", "じぇ"),
+        ScriptTup("jyo", "じょ"),
+        ScriptTup("zya", "じゃ"),
+        ScriptTup("zyi", "じぃ"),
+        ScriptTup("zyu", "じゅ"),
+        ScriptTup("zye", "じぇ"),
+        ScriptTup("zyo", "じょ"),
+        ScriptTup("si", "し"),
+        ScriptTup("ci", "し"),
+        ScriptTup("ce", "せ"),
+        ScriptTup("xka", "ヵ"),
+        ScriptTup("qyi", "くぃ"),
+        ScriptTup("qye", "くぇ"),
+        ScriptTup("kwa", "くぁ"),
+        ScriptTup("qa", "くぁ"),
+        ScriptTup("qi", "くぃ"),
+        ScriptTup("qe", "くぇ"),
+        ScriptTup("qo", "くぉ"),
+        ScriptTup("xke", "ヶ"),
+        ScriptTup("lke", "ヶ"),
+        ScriptTup("ca", "か"),
+        ScriptTup("cu", "く"),
+        ScriptTup("co", "こ"),
+        ScriptTup("qu", "く"),
+        ScriptTup("whi", "うぃ"),
+        ScriptTup("whe", "うぇ"),
+        ScriptTup("who", "うぉ"),
+        ScriptTup("yi", "い"),
+        ScriptTup("lyi", "ぃ"),
+        ScriptTup("xyi", "ぃ"),
+        ScriptTup("lye", "ぇ"),
+        ScriptTup("xye", "ぇ"),
+        ScriptTup("xa", "ぁ"),
+        ScriptTup("xi", "ぃ"),
+        ScriptTup("xu", "ぅ"),
+        ScriptTup("xe", "ぇ"),
+        ScriptTup("xo", "ぉ"),
         ScriptTup("whu", "う"),
         ScriptTup("nn", "ん"),
         ScriptTup("xn", "ん"),
-        ScriptTup("n", "ん"),
         ScriptTup("wu", "う"),
         ScriptTup("xya", "ゃ"),
         ScriptTup("xyu", "ゅ"),
@@ -462,78 +513,84 @@ fn main() {
     gen_kana_to_geminates(&mut file);
     gen_hiragana_to_katakana(&mut file);
     gen_katakana_to_hiragana(&mut file);
+    gen_romaji_to_kana(&mut file);
+    gen_kana_to_romaji(&mut file);
+}
+
+fn gen_romaji_to_kana(file: &mut BufWriter<File>) {
+    let mut map = phf_codegen::Map::new();
+
+    gen_map(&mut map, HIRAGANA_AND_ROMAJI.to_kana(), false);
+
+    writeln!(
+        file,
+        "pub static ROMAJI_TO_KANA: phf::Map<&'static str, &'static str> = \n{};\n",
+        map.build()
+    )
+    .unwrap();
+}
+
+fn gen_kana_to_romaji(file: &mut BufWriter<File>) {
+    let mut map = phf_codegen::Map::new();
+
+    gen_map(&mut map, HIRAGANA_AND_ROMAJI.to_romaji(), false);
+
+    writeln!(
+        file,
+        "pub static KANA_TO_ROMAJI: phf::Map<&'static str, &'static str> = \n{};\n",
+        map.build()
+    )
+    .unwrap();
 }
 
 fn gen_geminates_to_kana(file: &mut BufWriter<File>) {
-    let mut romaji_geminates_to_partial_kana = phf_codegen::Map::new();
+    let mut map = phf_codegen::Map::new();
 
-    gen_map(
-        &mut romaji_geminates_to_partial_kana,
-        GEMINATES_AND_KANA.favored.to_vec(),
-        false,
-    );
-
-    gen_map(
-        &mut romaji_geminates_to_partial_kana,
-        GEMINATES_AND_KANA.rest.to_vec(),
-        false,
-    );
+    gen_map(&mut map, GEMINATES_AND_KANA.with_sokuon(), false);
 
     writeln!(
         file,
         "pub static GEMINATES_TO_KANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        romaji_geminates_to_partial_kana.build()
+        map.build()
     )
     .unwrap();
 }
 
 fn gen_kana_to_geminates(file: &mut BufWriter<File>) {
-    let mut partial_kana_to_romaji_geminates = phf_codegen::Map::new();
+    let mut map = phf_codegen::Map::new();
 
-    gen_map(
-        &mut partial_kana_to_romaji_geminates,
-        GEMINATES_AND_KANA.rest.to_vec(),
-        true,
-    );
+    gen_map(&mut map, GEMINATES_AND_KANA.invert(), true);
 
     writeln!(
         file,
         "pub static KANA_TO_GEMINATES: phf::Map<&'static str, &'static str> = \n{};\n",
-        partial_kana_to_romaji_geminates.build()
+        map.build()
     )
     .unwrap();
 }
 
 fn gen_hiragana_to_katakana(file: &mut BufWriter<File>) {
-    let mut hiragana_to_katakana = phf_codegen::Map::new();
+    let mut map = phf_codegen::Map::new();
 
-    gen_map(
-        &mut hiragana_to_katakana,
-        HIRAGANA_AND_KATAKANA.to_vec(),
-        false,
-    );
+    gen_map(&mut map, HIRAGANA_AND_KATAKANA.to_vec(), false);
 
     writeln!(
         file,
         "pub static HIRAGANA_TO_KATAKANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        hiragana_to_katakana.build()
+        map.build()
     )
     .unwrap();
 }
 
 fn gen_katakana_to_hiragana(file: &mut BufWriter<File>) {
-    let mut katakana_to_hiragana = phf_codegen::Map::new();
+    let mut map = phf_codegen::Map::new();
 
-    gen_map(
-        &mut katakana_to_hiragana,
-        HIRAGANA_AND_KATAKANA.to_vec(),
-        true,
-    );
+    gen_map(&mut map, HIRAGANA_AND_KATAKANA.to_vec(), true);
 
     writeln!(
         file,
         "pub static KATAKANA_TO_HIRAGANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        katakana_to_hiragana.build()
+        map.build()
     )
     .unwrap();
 }
