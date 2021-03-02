@@ -5,7 +5,9 @@ pub struct ConversionData<'a> {
     pub romaji_to_hiragana: &'a IndexMap<&'static str, &'static str>,
     pub hiragana_to_romaji: &'a IndexMap<&'static str, &'static str>,
     pub geminates_to_kana: &'a IndexMap<&'static str, &'static str>,
+    pub kana_to_geminates: &'a IndexMap<&'static str, &'static str>,
     pub hiragana_to_katakana: &'a IndexMap<&'static str, &'static str>,
+    pub katakana_to_hiragana: &'a IndexMap<&'static str, &'static str>,
 }
 
 //
@@ -27,6 +29,18 @@ lazy_static! {
         map.insert("nt", "んt");
         map.insert("nb", "んb");
         map.insert("np", "んp");
+
+        map
+    };
+}
+
+lazy_static! {
+    pub static ref KANA_TO_GEMINATES: IndexMap<&'static str, &'static str> = {
+        let mut map: IndexMap<&str, &str> = IndexMap::new();
+
+        for (k, v) in GEMINATES_TO_KANA.iter() {
+            map.insert(v, k);
+        }
 
         map
     };
@@ -134,21 +148,38 @@ lazy_static! {
     };
 }
 
+lazy_static! {
+    pub static ref KATAKANA_TO_HIRAGANA: IndexMap<&'static str, &'static str> = {
+        let mut map: IndexMap<&str, &str> = IndexMap::new();
+
+        for (k, v) in HIRAGANA_TO_KATAKANA.iter() {
+            map.insert(v, k);
+        }
+
+        map
+    };
+}
+
 //
-// This does two things:
+// This does three things:
 //
 // 1. Inverts the insertion order of ROMAJI_TO_KANA
 // 2. Inverts from Map<K,V> to Map<V,K>
+// 3. TODO: Removes all instances of っ from the inverted mapping
 //
-// This ensures that the "dominant" mapping is preferred
-//
+// No. 2 ensures that the "dominant" mapping is preferred
 // For eg, "ka" over "ca" for "か"
 //
 lazy_static! {
     pub static ref KANA_TO_ROMAJI: IndexMap<&'static str, &'static str> = {
         let mut map: IndexMap<&str, &str> = IndexMap::new();
 
-        for (k, v) in ROMAJI_TO_KANA.iter().rev() {
+        for (k, v) in GEMINATES_TO_KANA.iter() {
+            map.insert(v, k);
+        }
+
+        // Iterate Map<K,V> in reverse, and invert Map<K,V> to Map<V,K>
+        for (k, v) in ROMAJI_TO_KANA_SANS_SOKUON.iter().rev() {
             map.insert(v, k);
         }
 
@@ -461,6 +492,20 @@ lazy_static! {
         map.insert("?", "？");
         map.insert(".", "。");
         map.insert(",", "、");
+
+        map
+    };
+}
+
+lazy_static! {
+    pub static ref ROMAJI_TO_KANA_SANS_SOKUON: IndexMap<&'static str, &'static str> = {
+        let mut map: IndexMap<&str, &str> = IndexMap::new();
+
+        for (k, v) in ROMAJI_TO_KANA.iter() {
+            if !v.contains('っ') {
+                map.insert(k, v);
+            }
+        }
 
         map
     };
