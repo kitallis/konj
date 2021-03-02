@@ -6,70 +6,31 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 
 #[derive(Clone)]
-struct ScriptTup<'a> {
-    romaji: &'a str,
-    kana: &'a str,
-}
+struct ScriptTup<'a>(&'a str, &'a str);
 
-struct KanaGeminates<'a> {
+struct Geminates<'a> {
     favored: [ScriptTup<'a>; 9],
     rest: [ScriptTup<'a>; 3],
 }
 
 // In the form of: romaji → partial kana
-const GEMINATES_AND_KANA: KanaGeminates<'static> = KanaGeminates {
+const GEMINATES_AND_KANA: Geminates<'static> = Geminates {
     favored: [
-        ScriptTup {
-            romaji: "kk",
-            kana: "っk",
-        },
-        ScriptTup {
-            romaji: "tt",
-            kana: "っt",
-        },
-        ScriptTup {
-            romaji: "cc",
-            kana: "っc",
-        },
-        ScriptTup {
-            romaji: "ss",
-            kana: "っs",
-        },
-        ScriptTup {
-            romaji: "pp",
-            kana: "っp",
-        },
-        ScriptTup {
-            romaji: "mm",
-            kana: "んm",
-        },
-        ScriptTup {
-            romaji: "mt",
-            kana: "んt",
-        },
-        ScriptTup {
-            romaji: "mb",
-            kana: "んb",
-        },
-        ScriptTup {
-            romaji: "mp",
-            kana: "んp",
-        },
+        ScriptTup("kk", "っk"),
+        ScriptTup("tt", "っt"),
+        ScriptTup("cc", "っc"),
+        ScriptTup("ss", "っs"),
+        ScriptTup("pp", "っp"),
+        ScriptTup("mm", "んm"),
+        ScriptTup("mt", "んt"),
+        ScriptTup("mb", "んb"),
+        ScriptTup("mp", "んp"),
     ],
 
     rest: [
-        ScriptTup {
-            romaji: "nt",
-            kana: "んt",
-        },
-        ScriptTup {
-            romaji: "np",
-            kana: "んp",
-        },
-        ScriptTup {
-            romaji: "nb",
-            kana: "んb",
-        },
+        ScriptTup("nt", "んt"),
+        ScriptTup("np", "んp"),
+        ScriptTup("nb", "んb"),
     ],
 };
 
@@ -79,6 +40,16 @@ struct KanaRomaji<'a> {
     with_sokuon: [ScriptTup<'a>; 3],
     punctuation: [ScriptTup<'a>; 6],
 }
+
+// impl KanaRomaji {
+//     fn to_romaji(self) {
+//      // concat the self.favored + GEMINATES_AND_KANA.favored + punctuation
+//     }
+
+//     fn to_kana(self) {
+//         // concat the self.favored + GEMINATES_AND_KANA.favored + punctuation
+//     }
+// }
 
 const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
     favored: [
