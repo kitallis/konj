@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use phf::Map;
 use std::string::String;
 
 pub fn is_str_between_char_range(s: &str, range_beg: char, range_end: char) -> bool {
@@ -13,6 +14,13 @@ pub fn is_str_between_char_range(s: &str, range_beg: char, range_end: char) -> b
 
 pub fn repeatedly_replace_str_with_map(s: &str, map: &IndexMap<&str, &str>) -> String {
     map.iter().fold(String::from(s), |mut acc, (k, v)| {
+        acc = acc.replace(k, v);
+        acc
+    })
+}
+
+pub fn repeatedly_replace_str_with_map_2(s: &str, map: &Map<&str, &str>) -> String {
+    map.into_iter().fold(String::from(s), |mut acc, (k, v)| {
         acc = acc.replace(k, v);
         acc
     })

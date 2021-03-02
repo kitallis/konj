@@ -64,7 +64,11 @@ fn main() {
 
 fn romaji_to_kana(romaji: &str, conversion_data: ConversionData) {
     let geminates =
-        strings::repeatedly_replace_str_with_map(&romaji, &conversion_data.geminates_to_kana);
+        strings::repeatedly_replace_str_with_map_2(&romaji, &conversion_data.geminates_to_kana);
+
+    for (k, v) in conversion_data.geminates_to_kana.into_iter() {
+        println!("{} {}", k, v)
+    }
 
     let hiragana_output = transform_input(&geminates, &conversion_data.romaji_to_hiragana);
 
@@ -83,7 +87,7 @@ fn katakana_to_romaji(kana: &str, conversion_data: ConversionData) {
     let hiragana_output =
         strings::repeatedly_replace_str_with_map(&kana, &conversion_data.katakana_to_hiragana);
 
-    let romaji_output = strings::repeatedly_replace_str_with_map(
+    let romaji_output = strings::repeatedly_replace_str_with_map_2(
         &transform_input(&hiragana_output, &conversion_data.hiragana_to_romaji),
         &conversion_data.kana_to_geminates,
     );
@@ -98,7 +102,7 @@ fn hiragana_to_romaji(kana: &str, conversion_data: ConversionData) {
     let katakana_output =
         strings::repeatedly_replace_str_with_map(&kana, &conversion_data.hiragana_to_katakana);
 
-    let romaji_output = strings::repeatedly_replace_str_with_map(
+    let romaji_output = strings::repeatedly_replace_str_with_map_2(
         &transform_input(kana, &conversion_data.hiragana_to_romaji),
         &conversion_data.kana_to_geminates,
     );

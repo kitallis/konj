@@ -1,49 +1,15 @@
+include!(concat!(env!("OUT_DIR"), "/data.rs"));
 use indexmap::IndexMap;
+use phf::{phf_map, Map};
 
 #[derive(Debug)]
 pub struct ConversionData<'a> {
     pub romaji_to_hiragana: &'a IndexMap<&'static str, &'static str>,
     pub hiragana_to_romaji: &'a IndexMap<&'static str, &'static str>,
-    pub geminates_to_kana: &'a IndexMap<&'static str, &'static str>,
-    pub kana_to_geminates: &'a IndexMap<&'static str, &'static str>,
+    pub geminates_to_kana: &'a phf::Map<&'static str, &'static str>,
+    pub kana_to_geminates: &'a phf::Map<&'static str, &'static str>,
     pub hiragana_to_katakana: &'a IndexMap<&'static str, &'static str>,
     pub katakana_to_hiragana: &'a IndexMap<&'static str, &'static str>,
-}
-
-//
-// In the form of: romaji → partial kana
-//
-lazy_static! {
-    pub static ref GEMINATES_TO_KANA: IndexMap<&'static str, &'static str> = {
-        let mut map = IndexMap::new();
-
-        map.insert("kk", "っk");
-        map.insert("tt", "っt");
-        map.insert("cc", "っc");
-        map.insert("ss", "っs");
-        map.insert("pp", "っp");
-        map.insert("mm", "んm");
-        map.insert("mt", "んt");
-        map.insert("mb", "んb");
-        map.insert("mp", "んp");
-        map.insert("nt", "んt");
-        map.insert("nb", "んb");
-        map.insert("np", "んp");
-
-        map
-    };
-}
-
-lazy_static! {
-    pub static ref KANA_TO_GEMINATES: IndexMap<&'static str, &'static str> = {
-        let mut map: IndexMap<&str, &str> = IndexMap::new();
-
-        for (k, v) in GEMINATES_TO_KANA.iter() {
-            map.insert(v, k);
-        }
-
-        map
-    };
 }
 
 //
@@ -174,7 +140,7 @@ lazy_static! {
     pub static ref KANA_TO_ROMAJI: IndexMap<&'static str, &'static str> = {
         let mut map: IndexMap<&str, &str> = IndexMap::new();
 
-        for (k, v) in GEMINATES_TO_KANA.iter() {
+        for (k, v) in GEMINATES_TO_KANA.into_iter() {
             map.insert(v, k);
         }
 
