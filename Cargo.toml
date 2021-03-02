@@ -12,9 +12,6 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-indexmap = "1.1.0"
-lazy_static = "1.4.0"
-ansi_term = "0.12"
 phf = { version = "0.8", features = ["macros"] }
 
 [build-dependencies]

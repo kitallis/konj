@@ -1,9 +1,6 @@
-extern crate ansi_term;
-
 include!(concat!(env!("OUT_DIR"), "/data.rs"));
 pub mod strings;
 
-use ansi_term::Colour::Green;
 use std::collections::{BTreeMap, HashMap};
 use std::io::stdin;
 use std::string::String;
@@ -20,10 +17,7 @@ static FULL_WIDTH_ROMAN_END: char = '\u{007E}';
 // hiragana: katakana + romaji
 
 fn main() {
-    println!(
-        "{}",
-        Green.paint("🍱 Konj: convert from one japanese script to all 🍱\n")
-    );
+    println!("🍱 Konj: convert from one japanese script to all 🍱\n");
 
     // Accept user input from STDIN
     let mut input = String::new();
@@ -45,10 +39,6 @@ fn main() {
 
 fn romaji_to_kana(romaji: &str) {
     let geminates = strings::repeatedly_replace_str_with_map(&romaji, &GEMINATES_TO_KANA);
-
-    for (k, v) in GEMINATES_TO_KANA.into_iter() {
-        println!("{} {}", k, v)
-    }
 
     let hiragana_output = transform_input(&geminates, &ROMAJI_TO_KANA);
 
