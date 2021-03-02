@@ -9,25 +9,24 @@ Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 # current status
 
 * `romaji` → `hiragana`, `katakana`
-* `hiragana` → `katakana`, `romaji` (incomplete support)
+* `hiragana` → `katakana`, `romaji`
+* `katakana` → `romaji`, `hiragana`
 
 # next steps
 
 * ~~handle capital letters in romaji input~~
 * ~~handle whitespace in romaji input~~
 * ~~handle punctuation: , and .~~
-* output json (flag)
-* make the program unix-pipe-able only
-* code cleanup:
+* ~~code cleanup:~~
   * ~~refactor generic transformation fns~~
   * ~~move out the static maps into another namepsace~~
   * ~~eager load the maps once during the program lifetime~~
+* expose a library API instead of just printing out
 
 # upcoming
 
-- Katakana → romaji, hiragana
 - Handle mixed-input (hiragana + romaji etc.)
-- Conversion from Kana to Kanji 
+- Conversion from Kana to Kanji
     * this would most likely be something like [henkan](https://en.wikipedia.org/wiki/Language_input_keys#Conversion) in IMEs
 
 # use
@@ -38,7 +37,7 @@ Convert between various Japanese scripts (`hiragana`, `katakana`, `romaji`)
 
 #
 # romaji to kana
-#    
+#
 ± echo "kippu" | ./target/debug/konj
 🍱  Konj: convert from one japanese script to all 🍱
 
