@@ -5,42 +5,82 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
-// trait Generate {
-//     fn write() -> Option<usize>;
-// }
+trait Map<'a> {
+    fn gen(&self, from: Vec<ScriptTup<'a>>, invert: bool) -> phf_codegen::Map<&'a str> {
+        let mut map = phf_codegen::Map::new();
+
+        for &ScriptTup(key, value) in from.iter() {
+            if invert {
+                // NOTE:
+                // How is &format allowed here?
+                // The string will destruct after the function body is finished
+                // Wouldn't that mean the map then points to something that doesn't exist since we lend a string reference?
+                map.entry(value, &format!("\"{}\"", key));
+            } else {
+                map.entry(key, &format!("\"{}\"", value));
+            }
+        }
+
+        // NOTE:
+        // Not a 100% clear on why this works.
+        // How can a mutable map be returned from this trait fn, does the caller basically get the ownership for it?
+        map
+    }
+}
+
+trait Gen<'a> {
+    fn write(&self, name: &str, buf: &mut BufWriter<File>, map: &phf_codegen::Map<&'a str>) {
+        writeln!(
+            buf,
+            "pub static {}: phf::Map<&str, &str> = \n{};\n",
+            name,
+            map.build()
+        )
+        .unwrap()
+    }
+}
 
 #[derive(Clone)]
 struct ScriptTup<'a>(&'a str, &'a str);
 
 struct Geminates<'a> {
-    favored: [ScriptTup<'a>; 9],
+    dominant: [ScriptTup<'a>; 9],
     rest: [ScriptTup<'a>; 3],
 }
 
+impl Map<'_> for Geminates<'_> {}
+
+impl Gen<'_> for Geminates<'_> {}
+
 impl<'a> Geminates<'a> {
-    fn with_sokuon(self) -> Vec<ScriptTup<'a>> {
-        self.favored
-            .to_vec()
-            .iter()
-            .cloned()
-            .chain(self.rest.to_vec().iter().cloned())
-            .collect()
+    // combine the dominant + rest and generate a Map
+    fn romaji_to_partial_hiragana(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(
+            // NOTE:
+            // Is there a better way to concatenate these arrays?
+            self.dominant
+                .to_vec()
+                .iter()
+                .cloned()
+                .chain(self.rest.to_vec().iter().cloned())
+                .collect(),
+            false,
+        );
+
+        self.write("GEMINATES_TO_HIRAGANA", buf, &data)
     }
 
-    fn invert(self) -> Vec<ScriptTup<'a>> {
-        let mut inversion: Vec<ScriptTup> = Vec::new();
+    // generate a Map from only the dominant Geminates
+    fn partial_hiragana_to_romaji(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(self.dominant.to_vec().iter().cloned().collect(), true);
 
-        for ScriptTup(k, v) in self.favored.to_vec().iter() {
-            inversion.push(ScriptTup(v, k))
-        }
-
-        inversion
+        self.write("HIRAGANA_TO_GEMINATES", buf, &data)
     }
 }
 
 // In the form of: romaji → partial kana
-const GEMINATES_AND_KANA: Geminates<'static> = Geminates {
-    favored: [
+const GEMINATES: Geminates = Geminates {
+    dominant: [
         ScriptTup("kk", "っk"),
         ScriptTup("tt", "っt"),
         ScriptTup("cc", "っc"),
@@ -59,14 +99,18 @@ const GEMINATES_AND_KANA: Geminates<'static> = Geminates {
     ],
 };
 
-struct KanaRomaji<'a> {
-    favored: [ScriptTup<'a>; 205],
+struct Romaji<'a> {
+    dominant: [ScriptTup<'a>; 205],
     rest: [ScriptTup<'a>; 70],
     with_sokuon: [ScriptTup<'a>; 3],
     punctuation: [ScriptTup<'a>; 6],
 }
 
-//
+impl Map<'_> for Romaji<'_> {}
+
+impl Gen<'_> for Romaji<'_> {}
+
+
 // This does three things:
 //
 // 1. Inverts the insertion order of ROMAJI_TO_KANA
@@ -75,46 +119,48 @@ struct KanaRomaji<'a> {
 //
 // No. 2 ensures that the "dominant" mapping is preferred
 // For eg, "ka" over "ca" for "か"
-//
-impl<'a> KanaRomaji<'a> {
-    // Ignore 'tsu'
-    fn to_romaji(self) -> Vec<ScriptTup<'a>> {
-        self.invert()
-            .to_vec()
-            .iter()
-            .cloned()
-            .chain(GEMINATES_AND_KANA.invert().iter().cloned())
-            .collect()
+impl<'a> Romaji<'a> {
+    // NOTE:
+    // How am I allowed to take self as the first parameter here?
+    // Shouldn't this be &self?
+    // This would mean that I'm passing ownership to this method?
+    // But how does that work when my struct is actually a const (see down below)?
+
+    // combine dominant + rest + with_sukuon + punction
+    fn romaji_to_hiragana(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(
+            self.dominant
+                .to_vec()
+                .iter()
+                .cloned()
+                .chain(self.rest.to_vec().iter().cloned())
+                .chain(self.with_sokuon.to_vec().iter().cloned())
+                .chain(self.punctuation.to_vec().iter().cloned())
+                .collect(),
+            false,
+        );
+
+        self.write("ROMAJI_TO_HIRAGANA", buf, &data)
     }
 
-    fn invert(self) -> Vec<ScriptTup<'a>> {
-        let mut inversion: Vec<ScriptTup> = Vec::new();
+    // combine dominant + puncation and elide rest + with_sukuon
+    fn hiragana_to_romaji(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(
+            self.dominant
+                .to_vec()
+                .iter()
+                .cloned()
+                .chain(self.punctuation.to_vec().iter().cloned())
+                .collect(),
+            true,
+        );
 
-        for ScriptTup(k, v) in self.favored.to_vec().iter() {
-            inversion.push(ScriptTup(v, k))
-        }
-
-        for ScriptTup(k, v) in self.punctuation.to_vec().iter() {
-            inversion.push(ScriptTup(v, k))
-        }
-
-        inversion
-    }
-
-    fn to_kana(self) -> Vec<ScriptTup<'a>> {
-        self.favored
-            .to_vec()
-            .iter()
-            .cloned()
-            .chain(self.rest.to_vec().iter().cloned())
-            .chain(self.with_sokuon.to_vec().iter().cloned())
-            .chain(self.punctuation.to_vec().iter().cloned())
-            .collect()
+        self.write("HIRAGANA_TO_ROMAJI", buf, &data)
     }
 }
 
-const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
-    favored: [
+const ROMAJI: Romaji = Romaji {
+    dominant: [
         ScriptTup("n", "ん"),
         ScriptTup("nnn", "んn"),
         ScriptTup("a", "あ"),
@@ -411,201 +457,139 @@ const HIRAGANA_AND_ROMAJI: KanaRomaji<'static> = KanaRomaji {
     ],
 };
 
-// Direct mappings from hiragana to katakana char-by-char
-const HIRAGANA_AND_KATAKANA: [ScriptTup; 90] = [
-    ScriptTup("ぁ", "ァ"),
-    ScriptTup("あ", "ア"),
-    ScriptTup("ぃ", "ィ"),
-    ScriptTup("い", "イ"),
-    ScriptTup("ぅ", "ゥ"),
-    ScriptTup("う", "ウ"),
-    ScriptTup("ぇ", "ェ"),
-    ScriptTup("え", "エ"),
-    ScriptTup("ぉ", "ォ"),
-    ScriptTup("お", "オ"),
-    ScriptTup("か", "カ"),
-    ScriptTup("が", "ガ"),
-    ScriptTup("き", "キ"),
-    ScriptTup("ぎ", "ギ"),
-    ScriptTup("く", "ク"),
-    ScriptTup("ぐ", "グ"),
-    ScriptTup("け", "ケ"),
-    ScriptTup("げ", "ゲ"),
-    ScriptTup("こ", "コ"),
-    ScriptTup("ご", "ゴ"),
-    ScriptTup("さ", "サ"),
-    ScriptTup("ざ", "ザ"),
-    ScriptTup("し", "シ"),
-    ScriptTup("じ", "ジ"),
-    ScriptTup("す", "ス"),
-    ScriptTup("ず", "ズ"),
-    ScriptTup("せ", "セ"),
-    ScriptTup("ぜ", "ゼ"),
-    ScriptTup("そ", "ソ"),
-    ScriptTup("ぞ", "ゾ"),
-    ScriptTup("た", "タ"),
-    ScriptTup("だ", "ダ"),
-    ScriptTup("ち", "チ"),
-    ScriptTup("ぢ", "ヂ"),
-    ScriptTup("っ", "ッ"),
-    ScriptTup("つ", "ツ"),
-    ScriptTup("づ", "ヅ"),
-    ScriptTup("て", "テ"),
-    ScriptTup("で", "デ"),
-    ScriptTup("と", "ト"),
-    ScriptTup("ど", "ド"),
-    ScriptTup("な", "ナ"),
-    ScriptTup("に", "ニ"),
-    ScriptTup("ぬ", "ヌ"),
-    ScriptTup("ね", "ネ"),
-    ScriptTup("の", "ノ"),
-    ScriptTup("は", "ハ"),
-    ScriptTup("ば", "バ"),
-    ScriptTup("ぱ", "パ"),
-    ScriptTup("ひ", "ヒ"),
-    ScriptTup("び", "ビ"),
-    ScriptTup("ぴ", "ピ"),
-    ScriptTup("ふ", "フ"),
-    ScriptTup("ぶ", "ブ"),
-    ScriptTup("ぷ", "プ"),
-    ScriptTup("へ", "ヘ"),
-    ScriptTup("べ", "ベ"),
-    ScriptTup("ぺ", "ペ"),
-    ScriptTup("ほ", "ホ"),
-    ScriptTup("ぼ", "ボ"),
-    ScriptTup("ぽ", "ポ"),
-    ScriptTup("ま", "マ"),
-    ScriptTup("み", "ミ"),
-    ScriptTup("む", "ム"),
-    ScriptTup("め", "メ"),
-    ScriptTup("も", "モ"),
-    ScriptTup("ゃ", "ャ"),
-    ScriptTup("や", "ヤ"),
-    ScriptTup("ゅ", "ュ"),
-    ScriptTup("ゆ", "ユ"),
-    ScriptTup("ょ", "ョ"),
-    ScriptTup("よ", "ヨ"),
-    ScriptTup("ら", "ラ"),
-    ScriptTup("り", "リ"),
-    ScriptTup("る", "ル"),
-    ScriptTup("れ", "レ"),
-    ScriptTup("ろ", "ロ"),
-    ScriptTup("ゎ", "ヮ"),
-    ScriptTup("わ", "ワ"),
-    ScriptTup("ゐ", "ヰ"),
-    ScriptTup("ゑ", "ヱ"),
-    ScriptTup("を", "ヲ"),
-    ScriptTup("ん", "ン"),
-    ScriptTup("ゔ", "ヴ"),
-    ScriptTup("ゕ", "ヵ"),
-    ScriptTup("ゖ", "ヶ"),
-    ScriptTup("わ゛", "ヷ"),
-    ScriptTup("ゐ゛", "ヸ"),
-    ScriptTup("ゑ゛", "ヹ"),
-    ScriptTup("を゛", "ヺ"),
-];
+// NOTE:
+// This could really just be a constant containing the vector of tuples
+// But making this a struct allows us to "inherit" the Map and Gen traits
+struct Kana<'a> {
+    data: [ScriptTup<'a>; 90],
+}
 
+// Direct mappings from hiragana to katakana char-by-char
+const KANA: Kana = Kana {
+    data: [
+        ScriptTup("ぁ", "ァ"),
+        ScriptTup("あ", "ア"),
+        ScriptTup("ぃ", "ィ"),
+        ScriptTup("い", "イ"),
+        ScriptTup("ぅ", "ゥ"),
+        ScriptTup("う", "ウ"),
+        ScriptTup("ぇ", "ェ"),
+        ScriptTup("え", "エ"),
+        ScriptTup("ぉ", "ォ"),
+        ScriptTup("お", "オ"),
+        ScriptTup("か", "カ"),
+        ScriptTup("が", "ガ"),
+        ScriptTup("き", "キ"),
+        ScriptTup("ぎ", "ギ"),
+        ScriptTup("く", "ク"),
+        ScriptTup("ぐ", "グ"),
+        ScriptTup("け", "ケ"),
+        ScriptTup("げ", "ゲ"),
+        ScriptTup("こ", "コ"),
+        ScriptTup("ご", "ゴ"),
+        ScriptTup("さ", "サ"),
+        ScriptTup("ざ", "ザ"),
+        ScriptTup("し", "シ"),
+        ScriptTup("じ", "ジ"),
+        ScriptTup("す", "ス"),
+        ScriptTup("ず", "ズ"),
+        ScriptTup("せ", "セ"),
+        ScriptTup("ぜ", "ゼ"),
+        ScriptTup("そ", "ソ"),
+        ScriptTup("ぞ", "ゾ"),
+        ScriptTup("た", "タ"),
+        ScriptTup("だ", "ダ"),
+        ScriptTup("ち", "チ"),
+        ScriptTup("ぢ", "ヂ"),
+        ScriptTup("っ", "ッ"),
+        ScriptTup("つ", "ツ"),
+        ScriptTup("づ", "ヅ"),
+        ScriptTup("て", "テ"),
+        ScriptTup("で", "デ"),
+        ScriptTup("と", "ト"),
+        ScriptTup("ど", "ド"),
+        ScriptTup("な", "ナ"),
+        ScriptTup("に", "ニ"),
+        ScriptTup("ぬ", "ヌ"),
+        ScriptTup("ね", "ネ"),
+        ScriptTup("の", "ノ"),
+        ScriptTup("は", "ハ"),
+        ScriptTup("ば", "バ"),
+        ScriptTup("ぱ", "パ"),
+        ScriptTup("ひ", "ヒ"),
+        ScriptTup("び", "ビ"),
+        ScriptTup("ぴ", "ピ"),
+        ScriptTup("ふ", "フ"),
+        ScriptTup("ぶ", "ブ"),
+        ScriptTup("ぷ", "プ"),
+        ScriptTup("へ", "ヘ"),
+        ScriptTup("べ", "ベ"),
+        ScriptTup("ぺ", "ペ"),
+        ScriptTup("ほ", "ホ"),
+        ScriptTup("ぼ", "ボ"),
+        ScriptTup("ぽ", "ポ"),
+        ScriptTup("ま", "マ"),
+        ScriptTup("み", "ミ"),
+        ScriptTup("む", "ム"),
+        ScriptTup("め", "メ"),
+        ScriptTup("も", "モ"),
+        ScriptTup("ゃ", "ャ"),
+        ScriptTup("や", "ヤ"),
+        ScriptTup("ゅ", "ュ"),
+        ScriptTup("ゆ", "ユ"),
+        ScriptTup("ょ", "ョ"),
+        ScriptTup("よ", "ヨ"),
+        ScriptTup("ら", "ラ"),
+        ScriptTup("り", "リ"),
+        ScriptTup("る", "ル"),
+        ScriptTup("れ", "レ"),
+        ScriptTup("ろ", "ロ"),
+        ScriptTup("ゎ", "ヮ"),
+        ScriptTup("わ", "ワ"),
+        ScriptTup("ゐ", "ヰ"),
+        ScriptTup("ゑ", "ヱ"),
+        ScriptTup("を", "ヲ"),
+        ScriptTup("ん", "ン"),
+        ScriptTup("ゔ", "ヴ"),
+        ScriptTup("ゕ", "ヵ"),
+        ScriptTup("ゖ", "ヶ"),
+        ScriptTup("わ゛", "ヷ"),
+        ScriptTup("ゐ゛", "ヸ"),
+        ScriptTup("ゑ゛", "ヹ"),
+        ScriptTup("を゛", "ヺ"),
+    ],
+};
+
+impl Map<'_> for Kana<'_> {}
+
+impl Gen<'_> for Kana<'_> {}
+
+impl<'a> Kana<'a> {
+    fn hiragana_to_katakana(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(self.data.to_vec(), false);
+
+        self.write("HIRAGANA_TO_KATAKANA", buf, &data)
+    }
+
+    fn katakana_to_hiragana(self, buf: &mut BufWriter<File>) {
+        let data = self.gen(self.data.to_vec(), true);
+
+        self.write("KATAKANA_TO_HIRAGANA", buf, &data)
+    }
+}
+
+// Generate all permutations of necessary data mappings at compile-time.
+// This avoids the use of lazy_static! and hand-writing repetitive data in a file.
+// The disadvantage is that the actual data is not easily debuggable/visible to humans.
+// However, tests in the source code can solve the problem of correctness (you'd need those anyway).
 fn main() {
     let path = Path::new(&env::var("OUT_DIR").unwrap()).join("data.rs");
     let mut file = BufWriter::new(File::create(&path).unwrap());
 
-    gen_geminates_to_kana(&mut file);
-    gen_kana_to_geminates(&mut file);
-    gen_hiragana_to_katakana(&mut file);
-    gen_katakana_to_hiragana(&mut file);
-    gen_romaji_to_kana(&mut file);
-    gen_kana_to_romaji(&mut file);
-}
-
-fn gen_romaji_to_kana(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, HIRAGANA_AND_ROMAJI.to_kana(), false);
-
-    writeln!(
-        file,
-        "pub static ROMAJI_TO_KANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-fn gen_kana_to_romaji(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, HIRAGANA_AND_ROMAJI.to_romaji(), false);
-
-    writeln!(
-        file,
-        "pub static KANA_TO_ROMAJI: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-fn gen_geminates_to_kana(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, GEMINATES_AND_KANA.with_sokuon(), false);
-
-    writeln!(
-        file,
-        "pub static GEMINATES_TO_KANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-fn gen_kana_to_geminates(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, GEMINATES_AND_KANA.invert(), true);
-
-    writeln!(
-        file,
-        "pub static KANA_TO_GEMINATES: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-fn gen_hiragana_to_katakana(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, HIRAGANA_AND_KATAKANA.to_vec(), false);
-
-    writeln!(
-        file,
-        "pub static HIRAGANA_TO_KATAKANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-fn gen_katakana_to_hiragana(file: &mut BufWriter<File>) {
-    let mut map = phf_codegen::Map::new();
-
-    gen_map(&mut map, HIRAGANA_AND_KATAKANA.to_vec(), true);
-
-    writeln!(
-        file,
-        "pub static KATAKANA_TO_HIRAGANA: phf::Map<&'static str, &'static str> = \n{};\n",
-        map.build()
-    )
-    .unwrap();
-}
-
-// Populate the phf_codegen::Map with the vector of tuples in `from`.
-// Vec<(a,b)> -> Map<a,b>
-//
-// We can also generate this map in an inverted way, such that,
-// Vec<(a,b)> -> Map<b,a>
-fn gen_map<'a>(of: &mut phf_codegen::Map<&'a str>, from: Vec<ScriptTup<'a>>, invert: bool) {
-    for &ScriptTup(key, value) in from.iter() {
-        if invert {
-            of.entry(value, &format!("\"{}\"", key));
-        } else {
-            of.entry(key, &format!("\"{}\"", value));
-        }
-    }
+    GEMINATES.romaji_to_partial_hiragana(&mut file);
+    GEMINATES.partial_hiragana_to_romaji(&mut file);
+    ROMAJI.romaji_to_hiragana(&mut file);
+    ROMAJI.hiragana_to_romaji(&mut file);
+    KANA.katakana_to_hiragana(&mut file);
+    KANA.hiragana_to_katakana(&mut file);
 }
