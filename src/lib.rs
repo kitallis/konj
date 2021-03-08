@@ -20,10 +20,10 @@ pub fn romaji_to_kana(romaji: &str) {
     let katakana_output =
         strings::repeatedly_replace_str_with_map(&hiragana_output, &HIRAGANA_TO_KATAKANA);
 
-    println!(
-        "romaji: {}\nhiragana: {}\nkatakana: {}",
-        romaji, hiragana_output, katakana_output
-    );
+    // println!(
+    //     "romaji: {}\nhiragana: {}\nkatakana: {}",
+    //     romaji, hiragana_output, katakana_output
+    // );
 }
 
 pub fn katakana_to_romaji(kana: &str) {
@@ -34,10 +34,10 @@ pub fn katakana_to_romaji(kana: &str) {
         &HIRAGANA_TO_GEMINATES,
     );
 
-    println!(
-        "hiragana: {}\nkatakana: {}\nromaji: {}",
-        hiragana_output, kana, romaji_output
-    );
+    // println!(
+    //     "hiragana: {}\nkatakana: {}\nromaji: {}",
+    //     hiragana_output, kana, romaji_output
+    // );
 }
 
 pub fn hiragana_to_romaji(kana: &str) {
@@ -48,10 +48,10 @@ pub fn hiragana_to_romaji(kana: &str) {
         &HIRAGANA_TO_GEMINATES,
     );
 
-    println!(
-        "hiragana: {}\nkatakana: {}\nromaji: {}",
-        kana, katakana_output, romaji_output
-    );
+    // println!(
+    //     "hiragana: {}\nkatakana: {}\nromaji: {}",
+    //     kana, katakana_output, romaji_output
+    // );
 }
 
 pub fn transform_input(input: &str, map: &phf::Map<&str, &str>) -> String {
