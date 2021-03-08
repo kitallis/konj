@@ -1,0 +1,19 @@
+[package]
+name = "konj_bench"
+version = "0.1.0"
+authors = ["Akshay Gupta <kitallis@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+konj = { path = "../" }
+
+[[bin]]
+name = "konj_bench"
+path = "bench.rs"
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true
+opt-level = 3
+panic = "unwind"
