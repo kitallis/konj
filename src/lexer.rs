@@ -20,20 +20,19 @@ fn parse(input: char) -> LexItem {
         input if is_char_between_char_range(input, KANJI_BEG, KANJI_END) => LexItem::Kanji,
         input if is_char_between_char_range(input, LATIN_NUM_BEG, LATIN_NUM_END) => LexItem::Num,
         input if is_char_between_char_range(input, ROMAN_BEG, ROMAN_END) => LexItem::Rom,
-        JAPANESE_SPACE => LexItem::Space,
-        SPACE => LexItem::Space,
+        JAPANESE_SPACE | SPACE => LexItem::Space,
         _ => LexItem::Other,
     }
 }
 
-fn lex(input: &str) -> Vec<String> {
+fn lex(input: &str) -> Result<Vec<String>, String> {
     let mut result = Vec::new();
 
     for (_, group) in &input.chars().group_by(|c| parse(*c)) {
         result.push(group.collect());
     }
 
-    result
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -42,6 +41,6 @@ mod tests {
 
     #[test]
     fn test_lex() {
-        assert_eq!(lex("けしゴム"), vec!["けし", "ゴム"]);
+        assert_eq!(lex("けしゴム").unwrap(), vec!["けし", "ゴム"]);
     }
 }
