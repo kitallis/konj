@@ -17,10 +17,6 @@ phf = { version = "0.8", features = ["macros"] }
 [build-dependencies]
 phf_codegen = "0.8"
 
-# [lib]
-# name = "konj"
-# path = "src/lib.rs"
-
-# [[bin]]
-# name = "konj"
-# path = "src/bin.rs"
+[lib]
+name = "konj"
+path = "src/lib.rs"
