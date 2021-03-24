@@ -3,6 +3,7 @@ pub mod strings;
 
 use std::collections::{BTreeMap, HashMap};
 use std::string::String;
+use strings::*;
 
 static HIRAGANA_BEG: char = '\u{3040}';
 static HIRAGANA_END: char = '\u{309F}';
@@ -13,15 +14,12 @@ static FULL_WIDTH_ROMAN_END: char = '\u{007E}';
 
 fn to_hiragana(input: &str) -> String {
     match (is_katakana(&input), is_hiragana(&input), is_romaji(&input)) {
-        (true, false, false) => {
-            strings::repeatedly_replace_str_with_map(&input, &KATAKANA_TO_HIRAGANA)
-        }
+        (true, false, false) => repeatedly_replace_str_with_map(&input, &KATAKANA_TO_HIRAGANA),
 
         (false, true, false) => String::from(input),
 
         (false, false, true) => {
-            let geminates =
-                strings::repeatedly_replace_str_with_map(&input, &GEMINATES_TO_HIRAGANA);
+            let geminates = repeatedly_replace_str_with_map(&input, &GEMINATES_TO_HIRAGANA);
             transform_input(&geminates, &ROMAJI_TO_HIRAGANA)
         }
 
@@ -38,11 +36,9 @@ fn to_katakana(input: &str) -> String {
         }
 
         (false, false, true) => {
-            let geminates =
-                strings::repeatedly_replace_str_with_map(&input, &GEMINATES_TO_HIRAGANA);
+            let geminates = repeatedly_replace_str_with_map(&input, &GEMINATES_TO_HIRAGANA);
             let hiragana_output = transform_input(&geminates, &ROMAJI_TO_HIRAGANA);
-
-            strings::repeatedly_replace_str_with_map(&hiragana_output, &HIRAGANA_TO_KATAKANA)
+            repeatedly_replace_str_with_map(&hiragana_output, &HIRAGANA_TO_KATAKANA)
         }
 
         (_, _, _) => format!("Did not understand input character set."),
@@ -52,18 +48,17 @@ fn to_katakana(input: &str) -> String {
 fn to_romaji(input: &str) -> String {
     match (is_katakana(&input), is_hiragana(&input), is_romaji(&input)) {
         (true, false, false) => {
-            let hiragana_output =
-                strings::repeatedly_replace_str_with_map(&input, &KATAKANA_TO_HIRAGANA);
+            let hiragana_output = repeatedly_replace_str_with_map(&input, &KATAKANA_TO_HIRAGANA);
 
-            strings::repeatedly_replace_str_with_map(
+            repeatedly_replace_str_with_map(
                 &transform_input(&hiragana_output, &HIRAGANA_TO_ROMAJI),
                 &HIRAGANA_TO_GEMINATES,
             )
         }
 
-        (false, true, false) => strings::repeatedly_replace_str_with_map(
+        (false, true, false) => repeatedly_replace_str_with_map(
             &transform_input(&input, &HIRAGANA_TO_ROMAJI),
-            &GEMINATES_TO_HIRAGANA,
+            &HIRAGANA_TO_GEMINATES,
         ),
 
         (false, false, true) => String::from(input),
@@ -134,7 +129,13 @@ mod tests {
         assert_eq!(to_romaji("shinkansen"), "shinkansen");
         assert_eq!(to_romaji("はは"), "haha");
         assert_eq!(to_romaji("ドキ"), "doki");
-        assert_eq!(to_romaji("きっぷ"), "kiっpu");
+        assert_eq!(to_romaji("きっぷ"), "kippu");
+        assert_eq!(to_romaji("キップ"), "kippu");
         assert_eq!(to_romaji("きっう"), "kiっu");
+        assert_eq!(to_romaji("こんじゅ が すごい だ"), "konju ga sugoi da");
+        assert_eq!(to_romaji("コンジュ ガ スゴイ ダ"), "konju ga sugoi da");
+        // assert_eq!(to_romaji("ばつげーむ"), "batsuge mu");
+        // assert_eq!(to_romaji("抹げ む"), "抹ge mu");
+        // assert_eq!(to_romaji("缶コーヒー"), "suupaa");
     }
 }
