@@ -13,6 +13,7 @@ edition = "2018"
 
 [dependencies]
 phf = { version = "0.8", features = ["macros"] }
+itertools = "0.10.0"
 
 [build-dependencies]
 phf_codegen = "0.8"

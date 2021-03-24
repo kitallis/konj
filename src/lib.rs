@@ -1,16 +1,12 @@
 include!(concat!(env!("OUT_DIR"), "/data.rs"));
+pub mod constants;
+pub mod lexer;
 pub mod strings;
 
+use constants::*;
 use std::collections::{BTreeMap, HashMap};
 use std::string::String;
 use strings::*;
-
-static HIRAGANA_BEG: char = '\u{3040}';
-static HIRAGANA_END: char = '\u{309F}';
-static KATAKANA_BEG: char = '\u{30A0}';
-static KATAKANA_END: char = '\u{30FF}';
-static FULL_WIDTH_ROMAN_BEG: char = '\u{0021}';
-static FULL_WIDTH_ROMAN_END: char = '\u{007E}';
 
 fn to_hiragana(input: &str) -> String {
     match (is_katakana(&input), is_hiragana(&input), is_romaji(&input)) {
@@ -91,15 +87,15 @@ fn transform_input(input: &str, map: &phf::Map<&str, &str>) -> String {
 }
 
 fn is_katakana(s: &str) -> bool {
-    strings::is_str_between_char_range(s, KATAKANA_BEG, KATAKANA_END)
+    is_str_between_char_range(s, KATAKANA_BEG, KATAKANA_END)
 }
 
 fn is_hiragana(s: &str) -> bool {
-    strings::is_str_between_char_range(s, HIRAGANA_BEG, HIRAGANA_END)
+    is_str_between_char_range(s, HIRAGANA_BEG, HIRAGANA_END)
 }
 
 fn is_romaji(s: &str) -> bool {
-    strings::is_str_between_char_range(s, FULL_WIDTH_ROMAN_BEG, FULL_WIDTH_ROMAN_END)
+    is_str_between_char_range(s, ROMAN_BEG, ROMAN_END)
 }
 
 #[cfg(test)]

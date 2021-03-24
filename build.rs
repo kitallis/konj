@@ -110,7 +110,6 @@ impl Map<'_> for Romaji<'_> {}
 
 impl Gen<'_> for Romaji<'_> {}
 
-
 // This does three things:
 //
 // 1. Inverts the insertion order of ROMAJI_TO_KANA
